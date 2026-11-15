@@ -14,7 +14,7 @@ on:
       defconfig:
         description: '🧪 Kernel defconfig'
         required: true
-        default: 'vendor/apollo_defconfig'
+        default: 'sdm845-perf_defconfig'
       anykernel:
         description: '📦 Use AnyKernel3 packaging?'
         required: true
@@ -66,6 +66,23 @@ jobs:
           cd kernel-source
           wget -O setup.sh 'https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh'
           bash setup.sh legacy
+
+      - name: 🩹 Patch Manual Hooks (Coccinelle)
+        if: ${{ github.event.inputs.enable_kernelsu_next }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y coccinelle
+          git clone --depth=1 https://github.com/devnoname120/kernelsu-coccinelle.git /tmp/ksu-cocci
+          cd kernel-source
+          # 应用必备的 exec.cocci 补丁
+          spatch --sp-file /tmp/ksu-cocci/classic-hooks/exec.cocci --in-place --very-quiet --dir .
+
+      - name: ⚙️ Configure Manual Hooks
+        if: ${{ github.event.inputs.enable_kernelsu_next }}
+        run: |
+          cd kernel-source
+          echo "CONFIG_KSU=y" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
+          echo "# CONFIG_KSU_WITH_KPROBES is not set" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
 
       - name: ⚙️ Build Kernel
         run: |
