@@ -67,23 +67,32 @@ jobs:
           wget -O setup.sh 'https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh'
           bash setup.sh legacy
 
+      # --- 关键修复步骤 1: 强制应用 Manual Hooks 补丁 ---
       - name: 🩹 Patch Manual Hooks (Coccinelle)
         if: ${{ github.event.inputs.enable_kernelsu_next }}
         run: |
           sudo apt-get update && sudo apt-get install -y coccinelle
           git clone --depth=1 https://github.com/devnoname120/kernelsu-coccinelle.git /tmp/ksu-cocci
           cd /tmp/ksu-cocci/scope-minimized-hooks
-          # 使用官方脚本应用补丁
+          # 使用 apply.sh 脚本，并强制指定内核源码目录
           ./apply.sh $GITHUB_WORKSPACE/kernel-source
+          echo "✅ Coccinelle 补丁应用完毕。如果未生效，后续手动修改。"
 
+      # --- 关键修复步骤 2: 暴力锁定 Manual Hook 配置 ---
       - name: ⚙️ Configure Manual Hooks
         if: ${{ github.event.inputs.enable_kernelsu_next }}
         run: |
           cd kernel-source
           CONFIG_FILE="arch/arm64/configs/${{ github.event.inputs.defconfig }}"
+          echo "🔧 正在修改 defconfig: $CONFIG_FILE"
+          # 删除可能已存在的冲突配置
+          sed -i '/CONFIG_KSU/d' $CONFIG_FILE
+          sed -i '/CONFIG_KSU_WITH_KPROBES/d' $CONFIG_FILE
+          # 强制添加 Manual Hook 配置
           echo "CONFIG_KSU=y" >> $CONFIG_FILE
           echo "CONFIG_KSU_MANUAL_HOOK=y" >> $CONFIG_FILE
           echo "# CONFIG_KSU_WITH_KPROBES is not set" >> $CONFIG_FILE
+          echo "✅ defconfig 已强制启用 Manual Hook。"
 
       - name: ⚙️ Build Kernel
         run: |
