@@ -72,9 +72,9 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y coccinelle
           git clone --depth=1 https://github.com/devnoname120/kernelsu-coccinelle.git /tmp/ksu-cocci
-          cd kernel-source
-          # 应用必备的 exec.cocci 补丁
-          spatch --sp-file /tmp/ksu-cocci/classic-hooks/exec.cocci --in-place --very-quiet --dir .
+          cd /tmp/ksu-cocci/classic-hooks
+          # 使用官方 apply.sh 脚本，它会自动调用最新的 kernelsu.cocci 并处理所有细节
+          ./apply.sh $GITHUB_WORKSPACE/kernel-source
 
       - name: ⚙️ Configure Manual Hooks
         if: ${{ github.event.inputs.enable_kernelsu_next }}
