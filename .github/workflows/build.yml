@@ -64,7 +64,7 @@ jobs:
         if: ${{ github.event.inputs.enable_kernelsu_next }}
         run: |
           cd kernel-source
-          
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
       - name: ⚙️ Build Kernel
         run: |
           export KBUILD_BUILD_USER="${{ github.event.inputs.developer }}"
