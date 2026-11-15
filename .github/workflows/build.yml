@@ -72,17 +72,18 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y coccinelle
           git clone --depth=1 https://github.com/devnoname120/kernelsu-coccinelle.git /tmp/ksu-cocci
-          cd /tmp/ksu-cocci/classic-hooks
-          # 使用官方 apply.sh 脚本，它会自动调用最新的 kernelsu.cocci 并处理所有细节
+          cd /tmp/ksu-cocci/scope-minimized-hooks
+          # 使用官方脚本应用补丁
           ./apply.sh $GITHUB_WORKSPACE/kernel-source
 
       - name: ⚙️ Configure Manual Hooks
         if: ${{ github.event.inputs.enable_kernelsu_next }}
         run: |
           cd kernel-source
-          echo "CONFIG_KSU=y" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
-          echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
-          echo "# CONFIG_KSU_WITH_KPROBES is not set" >> arch/arm64/configs/${{ github.event.inputs.defconfig }}
+          CONFIG_FILE="arch/arm64/configs/${{ github.event.inputs.defconfig }}"
+          echo "CONFIG_KSU=y" >> $CONFIG_FILE
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> $CONFIG_FILE
+          echo "# CONFIG_KSU_WITH_KPROBES is not set" >> $CONFIG_FILE
 
       - name: ⚙️ Build Kernel
         run: |
